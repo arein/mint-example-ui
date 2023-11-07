@@ -3,7 +3,7 @@ import Image from "next/image";
 import styles from "@/styles/Home.module.css";
 import { useState } from "react";
 import { Mint } from './../components/Mint'
-import { useAccount, usePrepareContractWrite, useContractWrite, useWaitForTransaction, erc721ABI } from 'wagmi'
+import { useAccount } from 'wagmi'
 
 export default function Home() {
 	const [isNetworkSwitchHighlighted, setIsNetworkSwitchHighlighted] =
@@ -77,7 +77,7 @@ export default function Home() {
 				<div className={styles.wrapper}>
 					<div className={styles.container}>
 						<h1>Mint Sample</h1>
-						<Mint />
+						{ address ? <Mint /> : <div>Connect Wallet to Continue</div> }
 					</div>
 					<div className={styles.footer}>
 						<svg
