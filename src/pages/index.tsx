@@ -4,6 +4,7 @@ import styles from "@/styles/Home.module.css";
 import { useState } from "react";
 import { Mint } from './../components/Mint'
 import { useAccount } from 'wagmi'
+import { MintUSDC } from "@/components/MintUSDC";
 
 export default function Home() {
 	const [isNetworkSwitchHighlighted, setIsNetworkSwitchHighlighted] =
@@ -78,6 +79,7 @@ export default function Home() {
 					<div className={styles.container}>
 						<h1>Mint Sample</h1>
 						{ address ? <Mint /> : <div>Connect Wallet to Continue</div> }
+						{ address ? <MintUSDC /> : <div>Connect Wallet to Continue</div> }
 					</div>
 					<div className={styles.footer}>
 						<svg

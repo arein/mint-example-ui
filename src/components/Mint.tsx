@@ -2,20 +2,21 @@ import * as React from 'react'
 import { useAccount, usePrepareContractWrite, useContractWrite, useWaitForTransaction, erc721ABI } from 'wagmi'
 import styles from "@/styles/Home.module.css"
 import abi from './../abi/abi.json'
- 
-const contract = "0xf6fdeb9445d6fb2285cdd157c764f25661f2de30";
+import constants from '../utils/constants'
+
+const contractAddress = constants.contractAddreses['polygon'] as `0x${string}`;
 
 export function Mint() {
     const { address, isConnecting, isDisconnected } = useAccount();
 	const { config, error: prepareError, isError: isPrepareError } = usePrepareContractWrite({
-		address: contract,
+		address: contractAddress,
 		abi: abi,
-		functionName: 'mint',
-		args: [address, 1],
+		functionName: 'safeMint',
+		args: [address],
 		enabled: Boolean(address),
 	  })
 
-      const { data, error, isError, write } = useContractWrite(config)
+  const { data, error, isError, write } = useContractWrite(config)
 
 	const { isLoading, isSuccess } = useWaitForTransaction({
 		hash: data?.hash,
@@ -24,7 +25,7 @@ export function Mint() {
     return (
       <div>
         <button className={styles.button}  disabled={!write || isLoading} onClick={() => write?.()}>
-            {isLoading ? 'Minting...' : `Mint`}
+            {isLoading ? 'Minting...' : `Mint for Free`}
         </button>
         {isSuccess && (
             <div>
@@ -35,8 +36,8 @@ export function Mint() {
             </div>
         )}
         {(isPrepareError || isError) && (
-        <div>Error: {(prepareError || error)?.message}</div>
-      )}
+          <div>Error: {(prepareError || error)?.message}</div>
+        )}
       </div>
     )
   }

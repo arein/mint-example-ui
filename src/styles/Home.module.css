@@ -141,10 +141,16 @@ span.button, button.button {
 	animation: animateGlow 5s linear infinite;
 }
 
-span.button:hover {
+button.button:hover, span.button:hover {
 	background-color: hsl(var(--h), var(--s), 30%);
 	border: 1px solid hsl(var(--h), var(--s), 32%);
 	color: var(--color-grey-100);
+}
+
+button.button:disabled, span.button:disabled {
+	background-color: black;
+	border: 1px solid hsl(var(--h), var(--s), 32%);
+	color: gray;
 }
 
 .header {
