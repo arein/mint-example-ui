@@ -2,8 +2,9 @@ import * as React from 'react'
 import { useAccount, usePrepareContractWrite, useContractWrite, useWaitForTransaction, erc721ABI, useWalletClient, usePublicClient } from 'wagmi'
 import styles from "@/styles/Home.module.css"
 import constants from '../utils/constants'
+import obviousabi from '../abi/obviousabi.json'
 import { useState } from "react";
-import { createClient, encodeFunctionData, http } from 'viem'
+import { Hex, createClient, encodeFunctionData, http, parseAbi } from 'viem'
 import { polygon } from 'viem/chains'
 import { UserOperation, bundlerActions, getAccountNonce, signUserOperationHashWithECDSA } from 'permissionless'
 import { pimlicoPaymasterActions, pimlicoBundlerActions } from 'permissionless/actions/pimlico'
@@ -26,14 +27,12 @@ export function MintSmart() {
     })
         .extend(bundlerActions)
         .extend(pimlicoBundlerActions)
-     
-
-    // Not used in this example
-    // const paymasterClient = createClient({
-    //     // ⚠️ using v2 of the API ⚠️
-    //     transport: http(`https://api.pimlico.io/v2/polygon/rpc?apikey=${apiKey}`),
-    //     chain: polygon
-    // }).extend(pimlicoPaymasterActions)
+    
+    const paymasterClient = createClient({
+        // ⚠️ using v2 of the API ⚠️
+        transport: http(`https://api.pimlico.io/v2/polygon/rpc?apikey=${apiKey}`),
+        chain: polygon
+    }).extend(pimlicoPaymasterActions)
 
     // You can get the paymaster addresses from https://docs.pimlico.io/reference/erc20-paymaster/contracts
     const erc20PaymasterAddress = "0xa683b47e447De6c8A007d9e294e87B6Db333Eb18"
@@ -59,28 +58,46 @@ export function MintSmart() {
         return receipt
     }
 
-    const submitDummy = async () => {
-        console.log("Sponsoring a user operation with the ERC-20 paymaster...")
-        const gasPriceResult = await bundlerClient.getUserOperationGasPrice();
-        
+    const submitMint = async () => {
         const newNonce = await getAccountNonce(publicClient, {
             entryPoint: ENTRY_POINT_ADDRESS as `0x${string}`,
             sender: address as `0x${string}`
         })
-        
-        const sponsoredUserOperation: UserOperation = {
+
+        console.log("Sponsoring a user operation with the ERC-20 paymaster...")
+        // FILL OUT REMAINING USER OPERATION VALUES
+        const gasPrice = await bundlerClient.getUserOperationGasPrice()
+
+        const userOperation = {
             sender: address as `0x${string}`,
             nonce: newNonce,
-            initCode: "0x",
-            callData: genereteDummyCallData(),
+            initCode: '0x' as `0x${string}`,
+            callData: genereteMintCallData(address as `0x${string}`),
             callGasLimit: BigInt(100_000), // hardcode it for now at a high value
             verificationGasLimit: BigInt(500_000), // hardcode it for now at a high value
             preVerificationGas: BigInt(50_000), // hardcode it for now at a high value
-            maxFeePerGas: gasPriceResult.fast.maxFeePerGas,
-            maxPriorityFeePerGas: gasPriceResult.fast.maxPriorityFeePerGas,
-            paymasterAndData: erc20PaymasterAddress, // to use the erc20 paymaster, put its address in the paymasterAndData field
-            signature: "0x" // See ext step
+            maxFeePerGas: gasPrice.fast.maxFeePerGas,
+            maxPriorityFeePerGas: gasPrice.fast.maxPriorityFeePerGas,
+            // dummy signature
+            signature:
+                "0xa15569dd8f8324dbeabf8073fdec36d4b754f53ce5901e283c6de79af177dc94557fa3c9922cd7af2a96ca94402d35c39f266925ee6407aeb32b31d76978d4ba1c" as Hex
         }
+
+        // REQUEST PIMLICO VERIFYING PAYMASTER SPONSORSHIP
+        const sponsorUserOperationResult = await paymasterClient.sponsorUserOperation({
+            userOperation,
+            entryPoint: ENTRY_POINT_ADDRESS
+        })
+        
+        const sponsoredUserOperation: UserOperation = {
+            ...userOperation,
+            preVerificationGas: sponsorUserOperationResult.preVerificationGas,
+            verificationGasLimit: sponsorUserOperationResult.verificationGasLimit,
+            callGasLimit: sponsorUserOperationResult.callGasLimit,
+            paymasterAndData: sponsorUserOperationResult.paymasterAndData
+        }
+        
+        console.log("Received paymaster sponsor result:", sponsorUserOperationResult, )
         
         sponsoredUserOperation.signature = await signUserOperationHashWithECDSA({
             client: walletClient!,
@@ -100,7 +117,7 @@ export function MintSmart() {
    
     return (
       <div>
-        <button className={styles.button}  disabled={isLoading} onClick={() => submitDummy?.()}>
+        <button className={styles.button}  disabled={isLoading} onClick={() => submitMint?.()}>
             {isLoading ? 'Minting...' : `Mint for Free`}
         </button>
         {pimlicoHash && (
@@ -118,30 +135,16 @@ export function MintSmart() {
     )
   }
 
+// Sponsor the Mint
+const genereteMintCallData = (address: `0x${string}`) => {
+    // Aprove USDC
+    const contractABI = parseAbi([
+        'function safeMint(address to) public',
+      ])
 
-// SPONSOR A USER OPERATION WITH THE ERC-20 PAYMASTER
-const genereteDummyCallData = () => {
-    // SEND EMPTY CALL TO VITALIK
-    const to = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" // vitalik
-    const value = BigInt(0)
-    const data = "0x"
-
-    const callData = encodeFunctionData({
-        abi: [
-            {
-                inputs: [
-                    { name: "dest", type: "address" },
-                    { name: "value", type: "uint256" },
-                    { name: "func", type: "bytes" }
-                ],
-                name: "execute",
-                outputs: [],
-                stateMutability: "nonpayable",
-                type: "function"
-            }
-        ],
-        args: [to, value, data]
-    })
-
-    return callData
+    return encodeFunctionData({
+        abi: contractABI,
+        functionName: 'safeMint',
+        args: [address],
+      })
 }
