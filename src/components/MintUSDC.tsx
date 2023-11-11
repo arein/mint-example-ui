@@ -50,7 +50,7 @@ export function MintUSDC() {
       functionName: 'mintInUSDC',
       args: [],
       enabled: Boolean(address && allowance && allowance > 0),
-      })
+    })
   
     const { data: mintContractResult, error: mintError, isError: isMintError, write: mint } = useContractWrite(config)
   

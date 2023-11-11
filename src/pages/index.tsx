@@ -7,6 +7,7 @@ import { useAccount } from 'wagmi'
 import { MintUSDC } from "@/components/MintUSDC";
 import Toggle from 'react-toggle'
 import { MintSmart } from "@/components/MintSmart";
+import { MintSmartUSDC } from "@/components/MintSmartUSDC";
 
 export default function Home() {
 	const [isNetworkSwitchHighlighted, setIsNetworkSwitchHighlighted] =
@@ -89,7 +90,8 @@ export default function Home() {
 						{ isConnecting && <div>Connecting Wallet...</div> }
 						{ address && !isSmartAccountMode && <Mint /> }
 						{ address && isSmartAccountMode && <MintSmart /> }
-						{ address && <MintUSDC /> }
+						{ address && !isSmartAccountMode && <MintUSDC /> }
+						{ address && isSmartAccountMode && <MintSmartUSDC /> }
 					</div>
 					<div className={styles.footer}>
 						<svg

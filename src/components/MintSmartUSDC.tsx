@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useAccount, usePrepareContractWrite, useContractWrite, useWaitForTransaction, erc721ABI, useWalletClient, usePublicClient } from 'wagmi'
+import { useAccount, usePrepareContractWrite, useContractWrite, useWaitForTransaction, erc721ABI, useWalletClient, usePublicClient, erc20ABI } from 'wagmi'
 import styles from "@/styles/Home.module.css"
 import constants from '../utils/constants'
 import obviousabi from '../abi/obviousabi.json'
@@ -9,12 +9,14 @@ import { polygon } from 'viem/chains'
 import { UserOperation, bundlerActions, getAccountNonce, signUserOperationHashWithECDSA } from 'permissionless'
 import { pimlicoPaymasterActions, pimlicoBundlerActions } from 'permissionless/actions/pimlico'
 import { BigNumber } from 'ethers'
+import abi from '../abi/abi.json'
 
 const contractAddress = constants.contractAddreses['polygon'] as `0x${string}`;
+const usdcAddress = constants.usdcAddresses['polygon'] as `0x${string}`;
 const apiKey = process.env.NEXT_PUBLIC_PIMLICO_API_KEY || "";
 const ENTRY_POINT_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 
-export function MintSmart() {
+export function MintSmartUSDC() {
 	const [isPimlicoError, setIsPimlicoError] = useState(false);
 	const [pimlicoError, setPimlicoError] = useState(new Error(''));
 	const [pimlicoReceipt, setPimlicoReceipt] = useState(null);
@@ -68,11 +70,12 @@ export function MintSmart() {
         // FILL OUT REMAINING USER OPERATION VALUES
         const gasPrice = await bundlerClient.getUserOperationGasPrice()
 
-        const mintCallData = genereteMintCallData(address as `0x${string}`);
+        const approveCallData = genereteApproveCallData(address as `0x${string}`);
+        const mintCallData = genereteMintCallData();
         const executeCallData = encodeFunctionData({
             abi: obviousabi,
-            functionName: 'executeCall',
-            args: [contractAddress, BigNumber.from("0"), mintCallData],
+            functionName: 'executeBatchCall',
+            args: [[usdcAddress, contractAddress], [BigNumber.from("0"), BigNumber.from("0")], [approveCallData, mintCallData]],
           })
 
         const userOperation = {
@@ -129,7 +132,7 @@ export function MintSmart() {
     return (
       <div>
         <button className={styles.button}  disabled={isLoading} onClick={() => submitMint?.()}>
-            {isLoading ? 'Minting...' : `Mint for Free`}
+            {isLoading ? 'Minting...' : `Mint for USDC`}
         </button>
         {isMinting && (
             <div>
@@ -147,15 +150,19 @@ export function MintSmart() {
   }
 
 // Sponsor the Mint
-const genereteMintCallData = (address: `0x${string}`) => {
-    // Aprove USDC
-    const contractABI = parseAbi([
-        'function safeMint(address to) public',
-      ])
-
+const genereteApproveCallData = (address: `0x${string}`) => {
     return encodeFunctionData({
-        abi: contractABI,
-        functionName: 'safeMint',
-        args: [address],
-      })
+        abi: erc20ABI,
+        functionName: 'approve',
+        args: [contractAddress, BigInt(100000)],
+    })
+}
+
+// Sponsor the Mint
+const genereteMintCallData = () => {
+    return encodeFunctionData({
+        abi: abi,
+        functionName: 'mintInUSDC',
+        args: [],
+    })
 }
