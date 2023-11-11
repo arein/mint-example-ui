@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import "@/styles/smart_toggle.css";
 import { createWeb3Modal, defaultWagmiConfig } from "@web3modal/wagmi/react";
 
 import { WagmiConfig } from "wagmi";

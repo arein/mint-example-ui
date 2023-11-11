@@ -5,17 +5,20 @@ import { useState } from "react";
 import { Mint } from './../components/Mint'
 import { useAccount } from 'wagmi'
 import { MintUSDC } from "@/components/MintUSDC";
+import Toggle from 'react-toggle'
+import { MintSmart } from "@/components/MintSmart";
 
 export default function Home() {
 	const [isNetworkSwitchHighlighted, setIsNetworkSwitchHighlighted] =
 		useState(false);
 	const [isConnectHighlighted, setIsConnectHighlighted] = useState(false);
+	const [isSmartAccountMode, setIsSmartAccountMode] = useState(false);
 
 	const closeAll = () => {
 		setIsNetworkSwitchHighlighted(false);
 		setIsConnectHighlighted(false);
 	};
-	const { address, isConnecting, isDisconnected } = useAccount();
+	const { address, isConnecting } = useAccount();
 
 	return (
 		<>
@@ -78,8 +81,15 @@ export default function Home() {
 				<div className={styles.wrapper}>
 					<div className={styles.container}>
 						<h1>Mint Sample</h1>
-						{ address ? <Mint /> : <div>Connect Wallet to Continue</div> }
-						{ address ? <MintUSDC /> : <div>Connect Wallet to Continue</div> }
+						{ !address && <div>Connect Wallet to Continue</div> }
+						<div>
+							<Toggle id='cheese-status' disabled={!address} defaultChecked={isSmartAccountMode} onChange={(event: any) => setIsSmartAccountMode(event.target.checked)} />
+							<label htmlFor='cheese-status'>Smart Account Mode</label>
+						</div> 
+						{ isConnecting && <div>Connecting Wallet...</div> }
+						{ address && !isSmartAccountMode && <Mint /> }
+						{ address && isSmartAccountMode && <MintSmart /> }
+						{ address && <MintUSDC /> }
 					</div>
 					<div className={styles.footer}>
 						<svg
@@ -97,12 +107,12 @@ export default function Home() {
 								d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"
 							/>
 						</svg>
-						<a
+						{/* <a
 							href="https://docs.walletconnect.com/web3modal/react/about?utm_source=next-starter-template&utm_medium=github&utm_campaign=next-starter-template"
 							target="_blank"
 						>
 							TBD ADD link
-						</a>
+						</a> */}
 					</div>
 				</div>
 			</main>
