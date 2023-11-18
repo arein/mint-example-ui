@@ -3,12 +3,14 @@ import Image from "next/image";
 import styles from "@/styles/Home.module.css";
 import { useState } from "react";
 import { Mint } from './../components/Mint'
-import { useAccount } from 'wagmi'
+import { useAccount, useWalletClient } from 'wagmi'
 import { MintUSDC } from "@/components/MintUSDC";
 import Toggle from 'react-toggle'
 import { MintSmart } from "@/components/MintSmart";
 import { MintSmartUSDC } from "@/components/MintSmartUSDC";
 import constants from '../utils/constants'
+import { getEthersProvider } from "@/utils/ethers";
+import { useWalletInsights } from "@/utils/smartAccount";
 
 const contractAddress = constants.contractAddreses['polygon'] as `0x${string}`;
 
@@ -17,12 +19,26 @@ export default function Home() {
 		useState(false);
 	const [isConnectHighlighted, setIsConnectHighlighted] = useState(false);
 	const [isSmartAccountMode, setIsSmartAccountMode] = useState(false);
+	const [isSmartContractWallet, setIsSmartContractWallet] = useState(false);
+
+
+	const { address, isConnecting, connector } = useAccount();
+
+	const provider = getEthersProvider({ chainId: 137 });
+
+	if (address) {
+		provider.getCode(contractAddress).then((code) => {
+			setIsSmartContractWallet(code !== '0x');
+		});
+	}
+
+	const { walletName, batchMethodName } = useWalletInsights(connector);
+	
 
 	const closeAll = () => {
 		setIsNetworkSwitchHighlighted(false);
 		setIsConnectHighlighted(false);
 	};
-	const { address, isConnecting } = useAccount();
 
 	return (
 		<>
@@ -89,12 +105,14 @@ export default function Home() {
 						<div>
 							<Toggle id='cheese-status' disabled={!address} defaultChecked={isSmartAccountMode} onChange={(event: any) => setIsSmartAccountMode(event.target.checked)} />
 							<label htmlFor='cheese-status'>Smart Account Mode</label>
+							{ isSmartContractWallet && <div>Deployed Smart Contract Wallet Detected 👍</div>}
+							{ batchMethodName && <div>{batchMethodName} was guessed for batch transactions on {walletName} 👍</div>}
 						</div> 
 						{ isConnecting && <div>Connecting Wallet...</div> }
 						{ address && !isSmartAccountMode && <Mint /> }
 						{ address && isSmartAccountMode && <MintSmart /> }
 						{ address && !isSmartAccountMode && <MintUSDC /> }
-						{ address && isSmartAccountMode && <MintSmartUSDC /> }
+						{ address && isSmartAccountMode && <MintSmartUSDC batchMethodName={batchMethodName || 'executeBatchCall'} /> }
 					</div>
 					<div className={styles.footer}>
 						<svg

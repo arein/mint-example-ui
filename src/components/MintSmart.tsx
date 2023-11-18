@@ -129,7 +129,7 @@ export function MintSmart() {
     return (
       <div>
         <button className={styles.button}  disabled={isLoading} onClick={() => submitMint?.()}>
-            {isLoading ? 'Minting...' : `Mint for Free`}
+            {isLoading ? 'Minting...' : `Sponsored Mint for Free`}
         </button>
         {isMinting && (
             <div>

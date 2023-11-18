@@ -16,11 +16,11 @@ const usdcAddress = constants.usdcAddresses['polygon'] as `0x${string}`;
 const apiKey = process.env.NEXT_PUBLIC_PIMLICO_API_KEY || "";
 const ENTRY_POINT_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
 
-export function MintSmartUSDC() {
-	const [isPimlicoError, setIsPimlicoError] = useState(false);
-	const [pimlicoError, setPimlicoError] = useState(new Error(''));
-	const [pimlicoReceipt, setPimlicoReceipt] = useState(null);
-	const [pimlicoHash, setPimlicoHash] = useState('');
+export function MintSmartUSDC({ batchMethodName = 'executeBatchCall' }) {
+    const [isPimlicoError, setIsPimlicoError] = useState(false);
+    const [pimlicoError, setPimlicoError] = useState(new Error(''));
+    const [pimlicoReceipt, setPimlicoReceipt] = useState(null);
+    const [pimlicoHash, setPimlicoHash] = useState('');
 
     const { address, isConnecting, isDisconnected } = useAccount();
 
@@ -74,7 +74,7 @@ export function MintSmartUSDC() {
         const mintCallData = genereteMintCallData();
         const executeCallData = encodeFunctionData({
             abi: obviousabi,
-            functionName: 'executeBatchCall',
+            functionName: batchMethodName,
             args: [[usdcAddress, contractAddress], [BigNumber.from("0"), BigNumber.from("0")], [approveCallData, mintCallData]],
           })
 
@@ -131,8 +131,8 @@ export function MintSmartUSDC() {
    
     return (
       <div>
-        <button className={styles.button}  disabled={isLoading} onClick={() => submitMint?.()}>
-            {isLoading ? 'Minting...' : `Mint for USDC`}
+        <button className={styles.button}  disabled={isLoading || !batchMethodName} onClick={() => submitMint?.()}>
+            {isLoading ? 'Minting...' : `Sponsored Mint for USDC`}
         </button>
         {isMinting && (
             <div>
